@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets/Scripts/Setup.cs" />
+    <Compile Include="Assets/Scripts/Chess.cs" />
+    <Compile Include="Assets/Scripts/Piece.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
