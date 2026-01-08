@@ -1,0 +1,4 @@
+repository "ChessGUI/ChessGUI@2475792351951@cloud"
+  path "/"
+    br "/main"
+    co "/main"
