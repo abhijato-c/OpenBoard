@@ -369,9 +369,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f08ae20064cb8a52bb0c55aa58913be3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Setup
-  SquarePrefab: {fileID: 467669564643156249, guid: 26f00df00236e82b59280b83eeca8f23, type: 3}
+  SquarePrefab: {fileID: 3167057515444574702, guid: 0c72f6ac0b96fbdc8b154d9b86383cf8, type: 3}
   SquaresFolder: {fileID: 1738015285}
   PiecePrefab: {fileID: 6311971904414172628, guid: b781fe1e5496c91b5a8e75c02355218a, type: 3}
+  LightColor: {r: 0.8627451, g: 0.8627451, b: 0.8627451, a: 1}
+  DarkColor: {r: 0.29411766, g: 0.49411765, b: 0.6784314, a: 1}
 --- !u!4 &1542090371
 Transform:
   m_ObjectHideFlags: 0

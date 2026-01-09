@@ -6,6 +6,8 @@ public class Setup : MonoBehaviour{
     public GameObject SquarePrefab;
     public GameObject SquaresFolder;
     public GameObject PiecePrefab;
+    public Color LightColor;
+    public Color DarkColor;
     char[] files = {'a','b','c','d','e','f','g','h'};
     private Chess Board = new Chess();
     GameObject[,] Pieces = new GameObject[8, 8];
@@ -56,7 +58,7 @@ public class Setup : MonoBehaviour{
         }
     }
     void Start(){
-        GenerateBoard(new Color(1f,1f,1f), new Color(0f,0f,0f));
+        GenerateBoard(LightColor, DarkColor);
         Board.ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         SetBoard();
     }

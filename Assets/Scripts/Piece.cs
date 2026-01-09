@@ -19,12 +19,10 @@ public class Piece : MonoBehaviour{
         // Determine file path
         string File = (color ? "W" : "B") + type.ToString().ToLower();
         string Path = PieceSet + "PieceSet/" + File;
-        print(Path);
 
         // Load the sprite
         Sprite newSprite = Resources.Load<Sprite>(Path);
         GetComponent<SpriteRenderer>().sprite = newSprite;
-        print(newSprite);
     }
     public void Spawn(bool color, Vector2Int position, PieceType type, string PieceSet = "Default"){
         this.color = color;
