@@ -1,8 +1,47 @@
 using UnityEngine;
 using System;
+using Unity.Mathematics;
 using Bitboard = System.UInt64;
+using Move = System.Int32;
+using System.Collections.Generic;
+
 
 public class Chess {
+    Bitboard clear_a=9187201950435737471UL;
+    Bitboard clear_b=13816973012072644543UL;
+    //Bitboard clear_c=16131858542891098079UL;
+    //Bitboard clear_d=17289301308300324847UL;
+    //Bitboard clear_e=17868022691004938231UL;
+    //Bitboard clear_f=18157383382357244923UL;
+    Bitboard clear_g=18302063728033398269UL;
+    Bitboard clear_h=18374403900871474942UL;
+
+    //Bitboard mask_a=9259542123273814144UL;
+    //Bitboard mask_b=4629771061636907072UL;
+    //Bitboard mask_c=2314885530818453536UL;
+    //Bitboard mask_d=1157442765409226768UL;
+    //Bitboard mask_e=578721382704613384UL;
+    //Bitboard mask_f=289360691352306692UL;
+    //Bitboard mask_g=144680345676153346UL;
+    //Bitboard mask_h=72340172838076673UL;
+
+    Bitboard clear_8=72057594037927935UL;
+    //Bitboard clear_7=18374967954648334335UL;
+    //Bitboard clear_6=18446463698244468735UL;
+    //Bitboard clear_5=18446742978492891135UL;
+    //Bitboard clear_4=18446744069431361535UL;
+    //Bitboard clear_3=18446744073692839935UL;
+    //Bitboard clear_2=18446744073709486335UL;
+    Bitboard clear_1=18446744073709551360UL;
+
+    //Bitboard mask_8=18374686479671623680UL;
+    Bitboard mask_7=71776119061217280UL;
+    //Bitboard mask_6=280375465082880UL;
+    //Bitboard mask_5=1095216660480UL;
+    //Bitboard mask_4=4278190080UL;
+    //Bitboard mask_3=16711680UL;
+    Bitboard mask_2=65280UL;
+    //Bitboard mask_1=255UL;
     public Bitboard wp=0; public Bitboard wr=0; public Bitboard wn=0; public Bitboard wb=0; public Bitboard wq=0; public Bitboard wk=0;
     public Bitboard bp=0; public Bitboard br=0; public Bitboard bn=0; public Bitboard bb=0; public Bitboard bq=0; public Bitboard bk=0;
 
@@ -12,6 +51,7 @@ public class Chess {
     public bool BCastleKing = true; public bool BCastleQueen = true;
 
     public bool turn=true;
+    private int ctz(Bitboard brd) {return math.tzcnt(brd);}
 
     public void ParseFEN(string FFEN){
         // Split the fen into segments
@@ -21,11 +61,24 @@ public class Chess {
         string CastleRights = segments[2];
         string EPsquare = segments[3];
 
+        // Reset board
+        wp=0; wr=0; wn=0; wb=0; wq=0; wk=0;
+        bp=0; br=0; bn=0; bb=0; bq=0; bk=0;
+        WCastleKing = false; BCastleKing = false; WCastleQueen = false; BCastleQueen = false;
+
+        // Set turn
         if (player == 'w') turn = true;
         else turn = false;
 
-        wp=0; wr=0; wn=0; wb=0; wq=0; wk=0;
-        bp=0; br=0; bn=0; bb=0; bq=0; bk=0;
+        // Castling rights
+        foreach (char c in CastleRights) {
+            if (c == 'K') WCastleKing = true;
+            else if (c == 'Q') WCastleQueen = true;
+            else if (c == 'k') BCastleKing = true;
+            else if (c == 'q') BCastleQueen = true;
+        }
+
+        // Piece arrangement
         foreach (char c in fen) {
             if (Char.IsDigit(c)) {
                 wp<<=c-'0'; wr<<=c-'0'; wn<<=c-'0'; wb<<=c-'0'; wq<<=c-'0'; wk<<=c-'0';
@@ -74,6 +127,449 @@ public class Chess {
                 }
             }
         }
+        bpcs=bp|br|bn|bb|bq|bk;
+        wpcs=wp|wr|wn|wb|wq|wk;
+        pieces=bpcs|wpcs;
+    }
+
+    public string GenerateFen() {
+        string fen = "";
+        string t = turn ? "w":"b";
+        string CastleRights = "";
+
+        for (int rank = 7; rank >= 0; rank--) {
+            int emptyCount = 0;
+
+            for (int file = 0; file < 8; file++) {
+                int shift = rank*8 + 7-file;
+                
+                // Check occupancy
+                if (((pieces >> shift) & 1) == 0) emptyCount++;
+                else {
+                    if (emptyCount > 0) {
+                        fen += emptyCount;
+                        emptyCount = 0;
+                    }
+                    
+                    // Identify and append the piece character
+                    if (((wp >> shift) & 1) != 0) fen += 'P';
+                    else if (((wr >> shift) & 1) != 0) fen += 'R';
+                    else if (((wn >> shift) & 1) != 0) fen += 'N';
+                    else if (((wb >> shift) & 1) != 0) fen += 'B';
+                    else if (((wq >> shift) & 1) != 0) fen += 'Q';
+                    else if (((wk >> shift) & 1) != 0) fen += 'K';
+                    else if (((bp >> shift) & 1) != 0) fen += 'p';
+                    else if (((br >> shift) & 1) != 0) fen += 'r';
+                    else if (((bn >> shift) & 1) != 0) fen += 'n';
+                    else if (((bb >> shift) & 1) != 0) fen += 'b';
+                    else if (((bq >> shift) & 1) != 0) fen += 'q';
+                    else if (((bk >> shift) & 1) != 0) fen += 'k';
+                }
+            }
+
+            // Append remaining empty squares at the end of the rank
+            if (emptyCount > 0) fen += emptyCount;
+            // Add separator between ranks, but not after the last one
+            if (rank > 0) fen += '/';
+        }
+
+        if(WCastleKing) CastleRights += 'K';
+        if(WCastleQueen) CastleRights += 'Q';
+        if(BCastleKing) CastleRights += 'k';
+        if(BCastleQueen) CastleRights += 'q';
+        if(CastleRights == "") CastleRights = "-";
+
+        return fen + ' ' + t + ' '+ CastleRights;
+    }
+    public void WKmoves(int i, ref List<Move> Moves){
+        if (((((1UL << i) & clear_h) << 7) &~ wpcs) != 0)
+            Moves.Add(ctz(1UL << i << 7) << 6 | i);
+        if (((1UL << i << 8) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 8) << 6 | i);
+        if (((((1UL << i) & clear_a) << 9) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 9) << 6 | i);
+        if (((((1UL << i) & clear_a) << 1) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 1) << 6 | i);
+        if (((((1UL << i) & clear_a) >> 7) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 7) << 6 | i);
+        if ((((1UL << i) >> 8) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 8) << 6 | i);
+        if (((((1UL << i) & clear_h) >> 9) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 9) << 6 | i);
+        if (((((1UL << i) & clear_h) >> 1) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 1) << 6 | i);
+    }
+
+    public void BKmoves(int i, ref List<Move> Moves){
+        if (((((1UL << i) & clear_h) << 7) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 7) << 6 | i);
+        if ((((1UL << i) << 8) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 8) << 6 | i);
+        if (((((1UL << i) & clear_a) << 9) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 9) << 6 | i);
+        if (((((1UL << i) & clear_a) << 1) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 1) << 6 | i);
+        if (((((1UL << i) & clear_a) >> 7) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 7) << 6 | i);
+        if ((((1UL << i) >> 8) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 8) << 6 | i);
+        if (((((1UL << i) & clear_h) >> 9) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 9) << 6 | i);
+        if (((((1UL << i) & clear_h) >> 1) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 1) << 6 | i);
+    }
+
+    public void WNmoves(int i, ref List<Move> Moves){
+        if (((((1UL << i) & clear_a & clear_b) >> 6) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 6) << 6 | i);
+        if (((((1UL << i) & clear_a) >> 15) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 15) << 6 | i);
+        if (((((1UL << i) & clear_h) >> 17) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 17) << 6 | i);
+        if (((((1UL << i) & clear_h & clear_g) >> 10) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 10) << 6 | i);
+        if (((((1UL << i) & clear_h & clear_g) << 6) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 6) << 6 | i);
+        if (((((1UL << i) & clear_h) << 15) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 15) << 6 | i);
+        if (((((1UL << i) & clear_a) << 17) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 17) << 6 | i);
+        if (((((1UL << i) & clear_a & clear_b) << 10) &~ wpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 10) << 6 | i);
+    }
+
+    public void BNmoves(int i, ref List<Move> Moves){
+        if (((((1UL << i) & clear_a & clear_b) >> 6) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 6) << 6 | i);
+        if (((((1UL << i) & clear_a) >> 15) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 15) << 6 | i);
+        if (((((1UL << i) & clear_h) >> 17) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 17) << 6 | i);
+        if (((((1UL << i) & clear_h & clear_g) >> 10) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) >> 10) << 6 | i);
+        if (((((1UL << i) & clear_h & clear_g) << 6) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 6) << 6 | i);
+        if (((((1UL << i) & clear_h) << 15) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 15) << 6 | i);
+        if (((((1UL << i) & clear_a) << 17) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 17) << 6 | i);
+        if (((((1UL << i) & clear_a & clear_b) << 10) &~ bpcs) != 0)
+            Moves.Add(ctz((1UL << i) << 10) << 6 | i);
+    }
+
+    public void WPmoves(int i, ref List<Move> Moves){
+        if ((((1UL << i) << 8) &~ pieces) != 0)
+            Moves.Add(ctz((1UL << i) << 8) << 6 | i);
+        if (((((((1UL << i) & mask_2) << 8) &~ pieces) << 8) &~ pieces) != 0)
+            Moves.Add(ctz((1UL << i) << 16) << 6 | i);
+        if ((((1UL << i) << 7) & bpcs & clear_a) != 0)
+            Moves.Add(ctz((1UL << i) << 7) << 6 | i);
+        if ((((1UL << i) << 9) & bpcs & clear_h) != 0)
+            Moves.Add(ctz((1UL << i) << 9) << 6 | i);
+    }
+
+    public void BPmoves(int i, ref List<Move> Moves){
+        if ((((1UL << i) >> 8) &~ pieces) != 0)
+            Moves.Add(ctz((1UL << i) >> 8) << 6 | i);
+        if (((((((1UL << i) & mask_7) >> 8) &~ pieces) >> 8) &~ pieces) != 0)
+            Moves.Add(ctz((1UL << i) >> 16) << 6 | i);
+        if ((((1UL << i) >> 7) & wpcs & clear_h) != 0)
+            Moves.Add(ctz((1UL << i) >> 7) << 6 | i);
+        if ((((1UL << i) >> 9) & wpcs & clear_a) != 0)
+            Moves.Add(ctz((1UL << i) >> 9) << 6 | i);
+    }
+
+    public void WBmoves(int i, ref List<Move> Moves){
+        Bitboard piece = 1UL << i;
+        Bitboard blockers=pieces;
+        Bitboard moves=0;
+        Bitboard loc=piece<<9;
+        if((loc&clear_h)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc&clear_a)!=0){
+                loc <<= 9;
+                moves |= loc;
+            }
+        }
+        loc=piece<<7;
+        if((loc&clear_a)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc&clear_h)!=0){
+                loc <<= 7;
+                moves |= loc;
+            }
+        }
+        loc=piece>>7;
+        if((loc&clear_h)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_a)!=0)){
+                loc >>= 7;
+                moves |= loc;
+            }
+        }
+        loc=piece>>9;
+        if((loc&clear_a)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_h)!=0)){
+                loc >>= 9;
+                moves |= loc;
+            }
+        }
+        moves &= ~wpcs;
+
+        int j = -1;
+        while(moves!=0){
+            j += ctz(moves) + 1;
+            moves >>= ctz(moves);
+            moves >>= 1;
+
+            Moves.Add((j << 6) | i);
+        }
+    }
+
+    public void BBmoves(int i, ref List<Move> Moves){
+        Bitboard piece = 1UL << i;
+        Bitboard blockers=pieces;
+        Bitboard moves=0;
+        Bitboard loc=piece<<9;
+        if((loc&clear_h)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc&clear_a)!=0){
+                loc <<= 9;
+                moves |= loc;
+            }
+        }
+        loc=piece<<7;
+        if((loc&clear_a)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc&clear_h)!=0){
+                loc <<= 7;
+                moves |= loc;
+            }
+        }
+        loc=piece>>7;
+        if((loc&clear_h)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_a)!=0)){
+                loc >>= 7;
+                moves |= loc;
+            }
+        }
+        loc=piece>>9;
+        if((loc&clear_a)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_h)!=0)){
+                loc >>= 9;
+                moves |= loc;
+            }
+        }
+        moves &= ~bpcs;
+
+        int j = -1;
+        while(moves!=0){
+            j += ctz(moves) + 1;
+            moves >>= ctz(moves);
+            moves >>= 1;
+
+            Moves.Add((j << 6) | i);
+        }
+    }
+
+    public void WRmoves(int i, ref List<Move> Moves){
+        Bitboard piece = 1UL << i;
+        Bitboard blockers = pieces;
+        Bitboard moves=0;
+        Bitboard loc = piece<<8;
+
+        if(loc!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc!=0)){
+                loc <<= 8;
+                moves |= loc;
+            }
+        }
+        loc=piece>>8;
+        if(loc!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc!=0)){
+                loc >>= 8;
+                moves |= loc;
+            }
+        }
+        loc=piece<<1;
+        if((loc&clear_h)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_a)!=0)){
+                loc <<= 1;
+                moves |= loc;
+            }
+        }
+        loc=piece>>1;
+        if((loc&clear_a)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_h)!=0)){
+                loc >>= 1;
+                moves |= loc;
+            }
+        }
+        moves &= ~wpcs;
+
+        int j = -1;
+        while(moves!=0){
+            j += ctz(moves) + 1;
+            moves >>= ctz(moves);
+            moves >>= 1;
+
+            Moves.Add((j << 6) | i);
+        }
+    }
+
+    public void BRmoves(int i, ref List<Move> Moves){
+        Bitboard piece = 1UL << i;
+        Bitboard blockers = pieces;
+        Bitboard moves=0;
+        Bitboard loc = piece<<8;
+
+        if(loc!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc!=0)){
+                loc <<= 8;
+                moves |= loc;
+            }
+        }
+        loc=piece>>8;
+        if(loc!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && (loc!=0)){
+                loc >>= 8;
+                moves |= loc;
+            }
+        }
+        loc=piece<<1;
+        if((loc&clear_h)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_a)!=0)){
+                loc <<= 1;
+                moves |= loc;
+            }
+        }
+        loc=piece>>1;
+        if((loc&clear_a)!=0){
+            moves|=loc;
+            while (((loc&blockers)==0) && ((loc&clear_h)!=0)){
+                loc >>= 1;
+                moves |= loc;
+            }
+        }
+        moves &= ~ bpcs;
+        int j = -1;
+        while(moves!=0){
+            j += ctz(moves) + 1;
+            moves >>= ctz(moves);
+            moves >>= 1;
+
+            Moves.Add((j << 6) | i);
+        }
+    }
+
+    public void WQmoves(int i, ref List<Move> Moves){
+        WRmoves(i, ref Moves);
+        WBmoves(i, ref Moves);
+    }
+
+    public void BQmoves(int i, ref List<Move> Moves){
+        BRmoves(i, ref Moves);
+        BBmoves(i, ref Moves);
+    }
+    void move_piece_white(Move mv){
+        Bitboard t = ~(1UL << ((mv>>6) & 63));
+        bb &= t;
+        bk &= t;
+        bn &= t;
+        bp &= t;
+        bq &= t;
+        br &= t;
+
+        if(((mv>>12) & 7) != 0){
+            wp &= ~(1UL << (mv & 63));
+            switch((mv>>12) & 7){
+                case 1:
+                    wn |= ~t; break;
+                case 2:
+                    wb |= ~t; break;
+                case 3:
+                    wr |= ~t; break;
+                case 4:
+                    wq |= ~t; break;
+            }
+        }
+        else{
+            Bitboard f = 1UL << (mv & 63);
+            if((wb&f)!=0) wb=(wb&(~f))|~t;
+            else if((wr&f)!=0){
+                wr=(wr&(~f))|~t;
+                if ((mv & 63) == 0) WCastleKing = false;
+                else if ((mv & 63)==7) WCastleQueen = false;
+            }
+            else if((wn&f)!=0) wn=(wn&(~f))|~t;
+            else if((wp&f)!=0) wp=(wp&(~f))|~t;
+            else if((wq&f)!=0) wq=(wq&(~f))|~t;
+            else{
+                wk=(wk&(~f))|~t;
+                WCastleKing = false;
+                WCastleQueen = false;
+            }
+
+            // Check if castling move, then move rook
+            if (mv == 67) wr = (wr & ~1UL) | 2UL;
+            else if (mv == 323) wr = (wr & ~7UL) | 4UL;
+        }
+    }
+
+    void move_piece_black(Move mv){
+        Bitboard t = ~(1UL << ((mv>>6) & 63));
+        wb &= t; wk &= t; wn &= t; wp &= t; wq &= t; wr &= t;
+
+        if(((mv>>12) & 7) != 0){
+            bp &= ~(1UL << (mv & 63));
+            switch((mv>>12) & 7){
+                case 1:
+                    bn |= ~t; break;
+                case 2:
+                    bb |= ~t; break;
+                case 3:
+                    br |= ~t; break;
+                case 4:
+                    bq |= ~t; break;
+            }
+        }
+        else{
+            Bitboard f = 1UL << (mv & 63);
+            if((bb&f)!=0) bb=(bb&(~f))|~t;
+            else if((br&f)!=0){
+                br=(br&(~f))|~t;
+                if ((mv & 63) == 56) BCastleKing = false;
+                else if ((mv & 63) == 63) BCastleQueen = false;
+            }
+            else if((bn&f)!=0) bn=(bn&(~f))|~t;
+            else if((bp&f)!=0) bp=(bp&(~f))|~t;
+            else if((bq&f)!=0) bq=(bq&(~f))|~t;
+            else{
+                bk=(bk&(~f))|~t;
+                BCastleKing = false;
+                BCastleQueen = false;
+            }
+
+            // Check if castling move, then move rook
+            if (mv == 3707) br = (br & ~56UL) | 58UL;
+            else if (mv == 3963) br = (br & ~63UL) | 60UL;
+        }
+    }
+
+    public void move_piece(Move mv){
+        if(turn) move_piece_white(mv);
+        else move_piece_black(mv);
+        turn = !turn;
         bpcs=bp|br|bn|bb|bq|bk;
         wpcs=wp|wr|wn|wb|wq|wk;
         pieces=bpcs|wpcs;

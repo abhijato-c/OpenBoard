@@ -1,0 +1,87 @@
+using UnityEngine;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Threading;
+
+public class Engine
+{
+    private Process _process;
+    private StreamWriter _inputStream;
+    private StreamReader _outputStream;
+
+    // Spawn an engine
+    public void Spawn(string path){
+        // Kill prev engine
+        if (_process != null && !_process.HasExited) Kill();
+
+        ProcessStartInfo startInfo = new ProcessStartInfo {
+            FileName = Application.streamingAssetsPath + "/" + path,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        try{
+            _process = new Process { StartInfo = startInfo };
+            _process.Start();
+            _inputStream = _process.StandardInput;
+            _outputStream = _process.StandardOutput;
+            UnityEngine.Debug.Log($"Engine spawned: {path}");
+        }
+        catch (System.Exception e){
+            UnityEngine.Debug.LogError($"Failed to spawn engine: {e.Message}");
+        }
+    }
+
+    // Sends a command and waits for the final response line. 
+    // TODO: RUN IN SEPERATE THREAD
+    public string SendCommand(string command){
+        if (_process == null || _process.HasExited) return null;
+
+        // Determine token that terminates the stread
+        string terminator = null;
+        if (command == "uci") terminator = "uciok";
+        else if (command == "isready") terminator = "readyok";
+        else if (command.StartsWith("go")) terminator = "bestmove";
+
+        _inputStream.WriteLine(command);
+        _inputStream.Flush();
+
+        // Return immediately if the command has no response (position, uci, ready)
+        if (terminator == null) return null;
+
+        // Scan output till terminator found
+        string line;
+        
+        while ((line = _outputStream.ReadLine()) != null){
+            if (line.StartsWith(terminator)) return line;
+        }
+        return line;
+    }
+
+    // Terminate the engine
+    public void Kill(){
+        if (_process == null) return;
+        if (_process.HasExited) return;
+        try{
+            _inputStream.WriteLine("quit");
+            _inputStream.Flush();
+
+            // Force kill if it's still there
+            if (!_process.WaitForExit(100)) _process.Kill();
+        }
+        catch (System.Exception e){
+            UnityEngine.Debug.LogWarning($"Error while killing engine: {e.Message}");
+        }
+        finally{
+            _process.Dispose();
+            _process = null;
+            _inputStream = null;
+            _outputStream = null;
+            UnityEngine.Debug.Log("Engine killed.");
+        }
+    }
+}
