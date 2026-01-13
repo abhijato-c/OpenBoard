@@ -689,6 +689,15 @@ public class Chess {
 
             if (!TempBoard.IsCheck()) Moves.Add(mv);
         }
+        if(IsCheck()) return Moves;
+        if (turn){
+            if(WCastleKing && ((pieces & (1UL << 1 | 1UL << 2)) == 0) && !IsSquareAttacked(2,false) && !IsSquareAttacked(1,false)) Moves.Add(1 << 6 | 3);
+            if(WCastleQueen && ((pieces & (1UL << 4 | 1UL << 5 | 1UL << 6)) == 0) && !IsSquareAttacked(4,false) && !IsSquareAttacked(5,false)) Moves.Add(5 << 6 | 3);
+        }
+        else{
+            if(BCastleKing && ((pieces & (1UL << 57 | 1UL << 58)) == 0) && !IsSquareAttacked(57,true) && !IsSquareAttacked(58,true)) Moves.Add(57 << 6 | 59);
+            if(BCastleQueen && ((pieces & (1UL << 60 | 1UL << 61 | 1UL << 62)) == 0) && !IsSquareAttacked(60,true) && !IsSquareAttacked(61,true)) Moves.Add(61 << 6 | 59);
+        }
 
         return Moves;
     }
@@ -703,6 +712,21 @@ public class Chess {
             }
         }
         turn = !turn;
+        return false;
+    }
+
+    public bool IsSquareAttacked(int square, bool by){
+        Bitboard sqr = 1UL << square;
+        bool OriginalTurn = turn;
+
+        turn = by;
+        foreach (Move mv in PseudoLegalMoves()) {
+            if ((1UL << ((mv >> 6) & 63)) == sqr) {
+                turn = OriginalTurn;
+                return true;
+            }
+        }
+        turn = OriginalTurn;
         return false;
     }
 }

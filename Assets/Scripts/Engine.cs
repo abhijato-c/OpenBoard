@@ -1,8 +1,6 @@
 using UnityEngine;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Threading;
 
 public class Engine
 {
@@ -36,8 +34,7 @@ public class Engine
         }
     }
 
-    // Sends a command and waits for the final response line. 
-    // TODO: RUN IN SEPERATE THREAD
+    // Sends a command and waits for the final response line.
     public string SendCommand(string command){
         if (_process == null || _process.HasExited) return null;
 
