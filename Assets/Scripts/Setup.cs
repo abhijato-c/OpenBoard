@@ -13,6 +13,7 @@ public class Setup : MonoBehaviour{
     public GameObject PiecePrefab;
     public GameObject SelectorPrefab;
     public GameObject SelectorCapPrefab;
+    public GameObject CheckPrefab;
     public Color LightColor;
     public Color DarkColor;
     char[] files = {'a','b','c','d','e','f','g','h'};
@@ -22,12 +23,13 @@ public class Setup : MonoBehaviour{
     public Engine eng = new Engine();
     string WhitePlayer = "Human";
     string BlackPlayer = "Human";
+    GameObject CheckIndicator;
 
     void GenerateBoard(Color LightColor, Color DarkColor){
         for (int file = 0; file < 8; file++){
             for (int rank = 0; rank < 8; rank++){
                 // Create the square
-                GameObject newSquare = Instantiate(SquarePrefab, new Vector3(file - 3.5f, rank - 3.5f, 3), Quaternion.identity);
+                GameObject newSquare = Instantiate(SquarePrefab, new Vector3(file - 3.5f, rank - 3.5f, 4), Quaternion.identity);
                 newSquare.name = $"Square {files[file]}{rank+1}";
                 newSquare.transform.parent = SquaresFolder.transform;
 
@@ -86,28 +88,15 @@ public class Setup : MonoBehaviour{
         }
     }
     private List<Vector2Int> GetPieceMoves(Vector2Int pos){
-        Piece PcScript = Pieces[pos.y, pos.x].GetComponent<Piece>();
-        PieceType type = PcScript.type;
-        bool color = PcScript.color;
         List<Vector2Int> ToPositions = new List<Vector2Int>();
-        List<Move> Moves = new List<Move>();
-        int BBpos = (pos.y*8) + (7-pos.x);
-        if (type == PieceType.Pawn && color == true)         Board.WPmoves(BBpos, ref Moves);
-        else if (type == PieceType.Knight && color == true)  Board.WNmoves(BBpos, ref Moves);
-        else if (type == PieceType.Bishop && color == true)  Board.WBmoves(BBpos, ref Moves);
-        else if (type == PieceType.Rook && color == true)    Board.WRmoves(BBpos, ref Moves);
-        else if (type == PieceType.Queen && color == true)   Board.WQmoves(BBpos, ref Moves);
-        else if (type == PieceType.King && color == true)    Board.WKmoves(BBpos, ref Moves);
-        else if (type == PieceType.Pawn && color == false)   Board.BPmoves(BBpos, ref Moves);
-        else if (type == PieceType.Knight && color == false) Board.BNmoves(BBpos, ref Moves);
-        else if (type == PieceType.Bishop && color == false) Board.BBmoves(BBpos, ref Moves);
-        else if (type == PieceType.Rook && color == false)   Board.BRmoves(BBpos, ref Moves);
-        else if (type == PieceType.Queen && color == false)  Board.BQmoves(BBpos, ref Moves);
-        else if (type == PieceType.King && color == false)   Board.BKmoves(BBpos, ref Moves);
-
-        foreach (Move mv in Moves){
-            int to = (mv >> 6) & 63;
-            ToPositions.Add(new Vector2Int(7 - to%8, to/8));
+        foreach (int mv in Board.LegalMoves()){
+            int from = mv & 63;
+            int file = 7 - from%8;
+            int rank = from/8;
+            if (file == pos.x && rank == pos.y){
+                int to = (mv >> 6) & 63;
+                ToPositions.Add(new Vector2Int(7 - to%8, to/8));
+            }
         }
         return ToPositions;
     }
@@ -128,17 +117,46 @@ public class Setup : MonoBehaviour{
     }
     public void MovePiece(Vector2Int from, Vector2Int to, int promote = 0){
         DestroySelectors();
+        if (CheckIndicator != null) Destroy(CheckIndicator);
+        // Handle capture
         if (Pieces[to.y, to.x] != null){
             Destroy(Pieces[to.y, to.x]);
             Pieces[to.y, to.x] = null;
         }
+
+        // Move piece
         Pieces[from.y, from.x].GetComponent<Piece>().MoveTo(to);
         Pieces[to.y, to.x] = Pieces[from.y, from.x];
         Pieces[from.y, from.x] = null;
+
+        // Hande castling
+        if (Pieces[to.y, to.x].GetComponent<Piece>().type == PieceType.King && Math.Abs(from.x - to.x) == 2){
+            // Kingside
+            if (to.x == 6){
+                Pieces[to.y,7].GetComponent<Piece>().MoveTo(new Vector2Int(5,to.y));
+                Pieces[to.y,5] = Pieces[to.y,7];
+                Pieces[to.y,7] = null;
+            }
+            // Queenside
+            else if (to.x == 2){
+                Pieces[to.y,0].GetComponent<Piece>().MoveTo(new Vector2Int(3,to.y));
+                Pieces[to.y,3] = Pieces[to.y,0];
+                Pieces[to.y,0] = null;
+            }
+        }
+
+        // Update board
         int FromBB = from.y*8 + 7-from.x;
         int ToBB = to.y*8 + 7-to.x;
         Move MoveBB = (promote << 12) |(ToBB << 6) | FromBB;
         Board.move_piece(MoveBB);
+
+        // Handle checks
+        if (Board.IsCheck()){
+            CheckIndicator = Instantiate(CheckPrefab);
+            int kingPos = Board.turn ? Board.ctz(Board.wk) : Board.ctz(Board.bk);
+            CheckIndicator.transform.position = new Vector3(7 - (kingPos%8) - 3.5f, (kingPos/8) - 3.5f, 3);
+        }
         if((Board.turn && WhitePlayer!="Human") || (!Board.turn && BlackPlayer!="Human")) EngineMove();
     }
     public void NewGame(string opp, bool col){

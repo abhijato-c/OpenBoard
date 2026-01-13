@@ -1,19 +1,10 @@
 fileFormatVersion: 2
-guid: efee67bf0ca3b3207893e6be463ca3c1
+guid: 0133d013771f8fba28f72510e19a1bff
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2176607329173403229
-    second: acircle_0
-  - first:
-      213: -2061970568637141607
-    second: acircle_1
-  - first:
-      213: 1458484938951494652
-    second: acircle_2
-  - first:
-      213: -3689614970663930173
-    second: acircle_3
+      213: 5371412345509669250
+    second: check_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -109,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: acircle_0
+      name: check_0
       rect:
         serializedVersion: 2
         x: 0
@@ -117,15 +108,15 @@ TextureImporter:
         width: 256
         height: 256
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d5674ee65dcd43e10800000000000000
-      internalID: 2176607329173403229
+      spriteID: 289604cb1171b8a40800000000000000
+      internalID: 5371412345509669250
       vertices: []
       indices: 
       edges: []
@@ -134,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 59f98062ec8efcaeda10c32cfac3b7a2
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -142,11 +133,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":256.0,"y":256.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      acircle_0: 2176607329173403229
+      check_0: 5371412345509669250
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

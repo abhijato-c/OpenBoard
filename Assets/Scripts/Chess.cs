@@ -51,7 +51,7 @@ public class Chess {
     public bool BCastleKing = true; public bool BCastleQueen = true;
 
     public bool turn=true;
-    private int ctz(Bitboard brd) {return math.tzcnt(brd);}
+    public int ctz(Bitboard brd) {return math.tzcnt(brd);}
 
     public void ParseFEN(string FFEN){
         // Split the fen into segments
@@ -518,11 +518,10 @@ public class Chess {
                 wk=(wk&(~f))|~t;
                 WCastleKing = false;
                 WCastleQueen = false;
+                // Check if castling move, then move rook
+                if (mv == 67) wr = (wr & ~(1UL << 0)) | (1UL << 2);
+                else if (mv == 323) wr = (wr & ~(1UL << 7)) | (1UL << 4);
             }
-
-            // Check if castling move, then move rook
-            if (mv == 67) wr = (wr & ~1UL) | 2UL;
-            else if (mv == 323) wr = (wr & ~7UL) | 4UL;
         }
     }
 
@@ -558,11 +557,10 @@ public class Chess {
                 bk=(bk&(~f))|~t;
                 BCastleKing = false;
                 BCastleQueen = false;
+                // Check if castling move, then move rook
+                if (mv == 3707) br = (br & ~(1UL << 56)) | (1UL << 58);
+                else if (mv == 3963) br = (br & ~(1UL << 63)) | (1UL << 60);
             }
-
-            // Check if castling move, then move rook
-            if (mv == 3707) br = (br & ~56UL) | 58UL;
-            else if (mv == 3963) br = (br & ~63UL) | 60UL;
         }
     }
 
@@ -573,5 +571,138 @@ public class Chess {
         bpcs=bp|br|bn|bb|bq|bk;
         wpcs=wp|wr|wn|wb|wq|wk;
         pieces=bpcs|wpcs;
+    }
+    public List<Move> PseudoLegalMoves(){
+        List<Move> Moves = new List<Move>();
+        if (turn){
+            WKmoves(ctz(wk), ref Moves);
+
+            Bitboard pc = wn;
+            int i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                WNmoves(i, ref Moves);
+            }
+
+            pc = wb;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                WBmoves(i, ref Moves);
+            }
+
+            pc = wp;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                WPmoves(i, ref Moves);
+            }
+
+            pc = wr;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                WRmoves(i, ref Moves);
+            }
+
+            pc = wq;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                WQmoves(i, ref Moves);
+            }
+        }
+        else{
+            BKmoves(ctz(bk), ref Moves);
+
+            Bitboard pc = bn;
+            int i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                BNmoves(i, ref Moves);
+            }
+
+            pc = bb;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                BBmoves(i, ref Moves);
+            }
+
+            pc = bp;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                BPmoves(i, ref Moves);
+            }
+
+            pc = br;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                BRmoves(i, ref Moves);
+            }
+
+            pc = bq;
+            i = -1;
+            while(pc!=0){
+                i += ctz(pc) + 1;
+                pc >>= ctz(pc);
+                pc >>= 1;
+                BQmoves(i, ref Moves);
+            }
+        }
+        return Moves;
+    }
+
+    public List<Move> LegalMoves(){
+        List<Move> PseudoMoves = PseudoLegalMoves();
+        List<Move> Moves = new List<Move>();
+
+        Chess TempBoard = new Chess();
+        foreach (Move mv in PseudoMoves) {
+            TempBoard.wp = wp; TempBoard.wr = wr; TempBoard.wn = wn; TempBoard.wb = wb; TempBoard.wq = wq; TempBoard.wk = wk;
+            TempBoard.bp = bp; TempBoard.br = br; TempBoard.bn = bn; TempBoard.bb = bb; TempBoard.bq = bq; TempBoard.bk = bk;
+            TempBoard.WCastleKing = WCastleKing; TempBoard.WCastleQueen = WCastleQueen;
+            TempBoard.BCastleKing = BCastleKing; TempBoard.BCastleQueen = BCastleQueen;
+            TempBoard.turn = turn;
+            TempBoard.move_piece(mv);
+            TempBoard.turn = turn;
+
+            if (!TempBoard.IsCheck()) Moves.Add(mv);
+        }
+
+        return Moves;
+    }
+    public bool IsCheck(){
+        Bitboard king = turn ? wk : bk;
+
+        turn = !turn;
+        foreach (Move mv in PseudoLegalMoves()) {
+            if ((1UL << ((mv >> 6) & 63)) == king) {
+                turn = !turn;
+                return true;
+            }
+        }
+        turn = !turn;
+        return false;
     }
 }
