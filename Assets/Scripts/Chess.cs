@@ -25,14 +25,14 @@ public class Chess {
     //Bitboard mask_g=144680345676153346UL;
     //Bitboard mask_h=72340172838076673UL;
 
-    Bitboard clear_8=72057594037927935UL;
+    //Bitboard clear_8=72057594037927935UL;
     //Bitboard clear_7=18374967954648334335UL;
     //Bitboard clear_6=18446463698244468735UL;
     //Bitboard clear_5=18446742978492891135UL;
     //Bitboard clear_4=18446744069431361535UL;
     //Bitboard clear_3=18446744073692839935UL;
     //Bitboard clear_2=18446744073709486335UL;
-    Bitboard clear_1=18446744073709551360UL;
+    //Bitboard clear_1=18446744073709551360UL;
 
     //Bitboard mask_8=18374686479671623680UL;
     Bitboard mask_7=71776119061217280UL;
@@ -52,6 +52,7 @@ public class Chess {
 
     public bool turn=true;
     public int ctz(Bitboard brd) {return math.tzcnt(brd);}
+    public int popcnt(Bitboard brd) {return math.countbits(brd);}
 
     public void ParseFEN(string FFEN){
         // Split the fen into segments
@@ -672,7 +673,6 @@ public class Chess {
         }
         return Moves;
     }
-
     public List<Move> LegalMoves(){
         List<Move> PseudoMoves = PseudoLegalMoves();
         List<Move> Moves = new List<Move>();
@@ -714,7 +714,6 @@ public class Chess {
         turn = !turn;
         return false;
     }
-
     public bool IsSquareAttacked(int square, bool by){
         Bitboard sqr = 1UL << square;
         bool OriginalTurn = turn;
@@ -727,6 +726,35 @@ public class Chess {
             }
         }
         turn = OriginalTurn;
+        return false;
+    }
+    public bool IsCheckmate(){
+        if (IsCheck() && LegalMoves().Count == 0) return true;
+        return false;
+    }
+    public bool IsStalemate(){
+        if (!IsCheck() && LegalMoves().Count == 0) return true;
+        return false;
+    }
+    public bool IsInsufficientMaterial(){
+        if (wp != 0 || bp != 0 || wr != 0 || br != 0 || wq != 0 || bq != 0) return false;
+        if(popcnt(wn)+popcnt(bn) == 0 && popcnt(wb)+popcnt(bb) == 0) return true; // King v king
+        if(popcnt(wn)+popcnt(bn) == 1 && popcnt(wb)+popcnt(bb) == 0) return true; // King and knight v king
+        if(popcnt(wn)+popcnt(bn) == 0 && popcnt(wb)+popcnt(bb) == 1) return true; // King and bishop v king
+        if(popcnt(wn)+popcnt(bn) == 2 && popcnt(wb)+popcnt(bb) == 0 && (popcnt(wn)==2 || popcnt(bn)==2)) return true; // King, 2 knight v king
+        if(popcnt(wn)+popcnt(bn) == 0 && popcnt(wb)+popcnt(bb) == 2){
+            Bitboard bishops = wb | bb;
+            Bitboard AltSquares = 6172840429334713770UL;
+
+            bool hasLight = (bishops & AltSquares) != 0;
+            bool hasDark = (bishops & ~AltSquares) != 0;
+
+            if (!(hasLight && hasDark)) return true; // If they are only on one color, it is insufficient.
+        }
+        return false;
+    }
+    public bool IsGameOver(){
+        if (IsCheckmate() || IsStalemate() || IsInsufficientMaterial()) return true;
         return false;
     }
 }

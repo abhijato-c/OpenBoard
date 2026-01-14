@@ -103,7 +103,7 @@ public class Setup : MonoBehaviour{
     public void PieceClicked(Vector2Int position, bool col){
         DestroySelectors();
 
-        if(col != Board.turn || (col && WhitePlayer!="Human") || (!col && BlackPlayer!="Human")) return;
+        if(col != Board.turn || (col && WhitePlayer!="Human") || (!col && BlackPlayer!="Human") || Board.IsGameOver()) return;
 
         // Spawn in the new selectors
         List<Vector2Int> ToPositions = GetPieceMoves(position);
@@ -157,6 +157,14 @@ public class Setup : MonoBehaviour{
             int kingPos = Board.turn ? Board.ctz(Board.wk) : Board.ctz(Board.bk);
             CheckIndicator.transform.position = new Vector3(7 - (kingPos%8) - 3.5f, (kingPos/8) - 3.5f, 3);
         }
+
+        // Game over check
+        if (Board.IsGameOver()){
+            Debug.Log("Game Over");
+            return;
+        }
+
+        // Engine move
         if((Board.turn && WhitePlayer!="Human") || (!Board.turn && BlackPlayer!="Human")) EngineMove();
     }
     public void NewGame(string opp, bool col){
