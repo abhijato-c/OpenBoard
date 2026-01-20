@@ -4,7 +4,6 @@ using UnityEngine.EventSystems;
 public class Selector : MonoBehaviour, IPointerDownHandler{
     public Vector2Int position; // file, rank
     public Vector2Int PiecePos; // Position of the piece it moves
-    public bool isCapture;
     public void Spawn(Vector2Int from, Vector2Int to){
         name = $"Selector {to.x} {to.y}";
         position = to;

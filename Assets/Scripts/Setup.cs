@@ -118,6 +118,7 @@ public class Setup : MonoBehaviour{
     public void MovePiece(Vector2Int from, Vector2Int to, int promote = 0){
         DestroySelectors();
         if (CheckIndicator != null) Destroy(CheckIndicator);
+        
         // Handle capture
         if (Pieces[to.y, to.x] != null){
             Destroy(Pieces[to.y, to.x]);

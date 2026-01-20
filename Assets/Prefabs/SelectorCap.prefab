@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4146677638238087773}
   - component: {fileID: 4103166224285789721}
-  - component: {fileID: 7072906094798582468}
-  - component: {fileID: 4329923140461712410}
+  - component: {fileID: 7148757455146716284}
+  - component: {fileID: 8831686631301837184}
   m_Layer: 0
   m_Name: SelectorCap
   m_TagString: Untagged
@@ -93,7 +93,21 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!61 &7072906094798582468
+--- !u!114 &7148757455146716284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8500685668530328690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1880c089fddd76ec2bfa58abd215ab54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Selector
+  position: {x: 0, y: 0}
+  PiecePos: {x: 0, y: 0}
+--- !u!61 &8831686631301837184
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -139,18 +153,3 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &4329923140461712410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8500685668530328690}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1880c089fddd76ec2bfa58abd215ab54, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Selector
-  position: {x: 0, y: 0}
-  PiecePos: {x: 0, y: 0}
-  isCapture: 1
