@@ -1,20 +1,23 @@
-using UnityEngine;
 using System.Diagnostics;
 using System.IO;
 
 public class Engine
 {
-    private Process _process;
-    private StreamWriter _inputStream;
-    private StreamReader _outputStream;
+    private Process _process = null;
+    private StreamWriter _inputStream = null;
+    private StreamReader _outputStream = null;
 
     // Spawn an engine
     public void Spawn(string path){
         // Kill prev engine
         if (_process != null && !_process.HasExited) Kill();
 
+        // Verify path
+        if (!File.Exists(path)) 
+            throw new System.Exception("The specified engine does not exist! Please check the file location, and change the engine config.");
+        
         ProcessStartInfo startInfo = new ProcessStartInfo {
-            FileName = Application.streamingAssetsPath + "/" + path,
+            FileName = path,
             UseShellExecute = false,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
@@ -29,8 +32,11 @@ public class Engine
             _outputStream = _process.StandardOutput;
             UnityEngine.Debug.Log($"Engine spawned: {path}");
         }
-        catch (System.Exception e){
-            UnityEngine.Debug.LogError($"Failed to spawn engine: {e.Message}");
+        catch{
+            _process = null;
+            _inputStream = null;
+            _outputStream = null;
+            throw new System.Exception("Failed to start engine! Please verify if it runs on your machine.");
         }
     }
 

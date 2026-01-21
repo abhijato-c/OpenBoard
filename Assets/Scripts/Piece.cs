@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.EventSystems;
 
 public enum PieceType { Pawn, Knight, Bishop, Rook, Queen, King }

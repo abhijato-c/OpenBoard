@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UnityEditor.Search;
+using TMPro;
 using UnityEngine;
-using UnityEngine.Scripting.APIUpdating;
+
 using Move = System.Int32;
 
 public class Setup : MonoBehaviour{
@@ -14,6 +14,7 @@ public class Setup : MonoBehaviour{
     public GameObject SelectorPrefab;
     public GameObject SelectorCapPrefab;
     public GameObject CheckPrefab;
+    public GameObject NotificationObject;
     public Color LightColor;
     public Color DarkColor;
     char[] files = {'a','b','c','d','e','f','g','h'};
@@ -162,17 +163,29 @@ public class Setup : MonoBehaviour{
         // Game over check
         if (Board.IsGameOver()){
             Debug.Log("Game Over");
+            ShowNotification("GAME OVER!", "game over");
             return;
         }
 
         // Engine move
         if((Board.turn && WhitePlayer!="Human") || (!Board.turn && BlackPlayer!="Human")) EngineMove();
     }
+    public void ShowNotification(string title, string message){
+        NotificationObject.transform.Find("Title").GetComponent<TMP_Text>().text = title;
+        NotificationObject.transform.Find("Message").GetComponent<TMP_Text>().text = message;
+        NotificationObject.SetActive(true);
+    }
+    public void CloseNotification(){
+        NotificationObject.SetActive(false);
+    }
     public void NewGame(string opp, bool col){
+        DestroySelectors();
+        if (CheckIndicator != null) Destroy(CheckIndicator);
+
         Board.ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         SetBoard();
         eng.Kill();
-        if(opp == "PassPlay"){
+        if(opp == ""){
             WhitePlayer = "Human";
             BlackPlayer = "Human";
         }
@@ -185,18 +198,24 @@ public class Setup : MonoBehaviour{
             BlackPlayer = "Human";
         }
 
-        if (opp == "Stockfish") eng.Spawn("Stockfish");
-        if (opp == "Jimbo") eng.Spawn("Jimbo.out");
+        if (opp!=""){
+            try{
+                eng.Spawn(PlayerPrefs.GetString(opp));
+            }
+            catch (Exception e){
+                Debug.LogError(e.Message);
+                ShowNotification("ENGINE ERROR!", e.Message);
+                NewGame("", true); 
+            }
+        }
         if(WhitePlayer!="Human") EngineMove();
     }
     public async void EngineMove(){
         // Send command in seperate thread
-        print(Board.GenerateFen());
         string result = await Task.Run(() => {
             eng.SendCommand($"position fen {Board.GenerateFen()}");
             return eng.SendCommand("go movetime 1000"); 
         });
-        print(result);
         string output = result.Split(' ')[1];
 
         int FromFile = output[0] - 'a';
@@ -218,11 +237,15 @@ public class Setup : MonoBehaviour{
     }
     void Start(){
         GenerateBoard(LightColor, DarkColor);
-        NewGame("PassPlay", true);
+        NewGame("", true);
     }
     void Awake() {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        // engines
+        if(!PlayerPrefs.HasKey("EngineNames"))
+            PlayerPrefs.SetString("EngineNames", "");
     }
     void OnApplicationQuit(){
         eng.Kill();

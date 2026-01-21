@@ -1,9 +1,9 @@
-using UnityEngine;
 using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
+
 using Bitboard = System.UInt64;
 using Move = System.Int32;
-using System.Collections.Generic;
 
 
 public class Chess {
