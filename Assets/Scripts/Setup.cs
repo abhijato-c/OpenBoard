@@ -163,7 +163,27 @@ public class Setup : MonoBehaviour{
         // Game over check
         if (Board.IsGameOver()){
             Debug.Log("Game Over");
-            ShowNotification("GAME OVER!", "game over");
+            string msg = "";
+            if (Board.IsCheckmate()){
+                msg += "Game result : Checkmate";
+                if (Board.turn)
+                    msg += "\n Winner : Black";
+                else
+                    msg += "\n Winner : White";
+                
+                if (WhitePlayer != BlackPlayer){
+                    if ((WhitePlayer == "Human" && !Board.turn) || (BlackPlayer == "Human" && Board.turn))
+                        msg += "\n Yow Won!!";
+                    else
+                        msg += "\n Sorry, you lost :c";
+                }
+            }
+            else if (Board.IsStalemate())
+                msg += "Game result : Draw by stalemate";
+            else if (Board.IsInsufficientMaterial())
+                msg += "Game result : Draw by insufficient material";
+            
+            ShowNotification("GAME OVER!", msg);
             return;
         }
 
