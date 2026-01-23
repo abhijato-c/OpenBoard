@@ -8,7 +8,7 @@ public class Selector : MonoBehaviour, IPointerDownHandler{
         name = $"Selector {to.x} {to.y}";
         position = to;
         PiecePos = from;
-        transform.position = new Vector3(to.x - 3.5f, to.y - 3.5f, 1f);
+        transform.position = new Vector3(to.x - 3.5f - 1f, to.y - 3.5f, 1f);
     }
     public void OnPointerDown(PointerEventData eventData){
         Setup.Instance.MovePiece(PiecePos, position);
