@@ -180,7 +180,7 @@ public class Chess {
         if(BCastleQueen) CastleRights += 'q';
         if(CastleRights == "") CastleRights = "-";
 
-        return fen + ' ' + t + ' '+ CastleRights;
+        return fen + ' ' + t + ' '+ CastleRights + " - 1 1";
     }
     public void WKmoves(int i, ref List<Move> Moves){
         if (((((1UL << i) & clear_h) << 7) &~ wpcs) != 0)
