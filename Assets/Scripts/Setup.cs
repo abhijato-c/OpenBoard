@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading.Tasks;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
-
+using UnityEngine.UI;
 using Move = System.Int32;
 
 public class Setup : MonoBehaviour{
@@ -19,8 +19,15 @@ public class Setup : MonoBehaviour{
     public GameObject NotificationObject;
     public GameObject PromoteDialog;
     public GameObject MoveHistory;
+    public GameObject WhitePieceCap;
+    public GameObject BlackPieceCap;
+    public TMP_Text WhiteAdv;
+    public TMP_Text BlackAdv;
     public TMP_Text WhitePlayerIndicator;
     public TMP_Text BlackPlayerIndicator;
+    public TMP_Text WhitePlayerIndicator2;
+    public TMP_Text BlackPlayerIndicator2;
+    public GameObject PieceDisplayPrefab;
     public ClockManager WhiteClock;
     public ClockManager BlackClock;
     public Color LightColor;
@@ -158,7 +165,7 @@ public class Setup : MonoBehaviour{
 
         GameObject btn = Instantiate(MoveButtonPrefab, MoveHistory.transform);
         int hmsnap = HMclock;
-        btn.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(() => PreviewMove(hmsnap));
+        btn.GetComponent<Button>().onClick.AddListener(() => PreviewMove(hmsnap));
         btn.transform.Find("Text").gameObject.GetComponent<TMP_Text>().text = MoveText;
         MoveButtons.Add(btn);
         HMclock++;
@@ -254,6 +261,8 @@ public class Setup : MonoBehaviour{
             CheckIndicator.transform.localScale = new Vector2(scale, scale);
         }
 
+        RefreshAdvantageIndicator();
+
         if (timed){
             if (Board.turn) WhiteClock.StartClock();
             else BlackClock.StartClock();
@@ -341,6 +350,8 @@ public class Setup : MonoBehaviour{
             CheckIndicator.transform.localScale = new Vector2(scale, scale);
         }
 
+        RefreshAdvantageIndicator();
+
         // Timer
         if (timed){
             if (Board.turn) BlackClock.AddTime(increment);
@@ -349,11 +360,6 @@ public class Setup : MonoBehaviour{
 
         // Add to move history
         AddHistory(from, to);
-
-        if (timed){
-            if (Board.turn) WhiteClock.StartClock();
-            else BlackClock.StartClock();
-        }
 
         // Game over check
         if (Board.IsGameOver()){
@@ -382,8 +388,63 @@ public class Setup : MonoBehaviour{
             return;
         }
 
+        if (timed){
+            if (Board.turn) WhiteClock.StartClock();
+            else BlackClock.StartClock();
+        }
+
         // Engine move
         if((Board.turn && WhitePlayer!="Human") || (!Board.turn && BlackPlayer!="Human")) EngineMove();
+    }
+    public void RefreshAdvantageIndicator(){
+        int queens = math.countbits(Board.wq) - math.countbits(Board.bq);
+        int rooks = math.countbits(Board.wr) - math.countbits(Board.br);
+        int bishops = math.countbits(Board.wb) - math.countbits(Board.bb);
+        int knights = math.countbits(Board.wn) - math.countbits(Board.bn);
+        int pawns = math.countbits(Board.wp) - math.countbits(Board.bp);
+        int adv = queens*9 + rooks*5 + bishops*3 + knights*3 + pawns;
+
+        foreach (Transform child in WhitePieceCap.transform) Destroy(child.gameObject);
+        foreach (Transform child in BlackPieceCap.transform) Destroy(child.gameObject);
+
+        for(int i = 0; i < math.abs(queens); ++i){
+            bool col = (queens > 0) ? true : false;
+            GameObject obj = Instantiate(PieceDisplayPrefab);
+            obj.GetComponent<Image>().sprite = Resources.Load<Sprite>(col ? "DefaultPieceSet/Bqueen" : "DefaultPieceSet/Wqueen");
+            obj.transform.SetParent(col ? WhitePieceCap.transform : BlackPieceCap.transform, false);
+            obj.transform.localScale = Vector3.one;
+        }
+        for(int i = 0; i < math.abs(rooks); ++i){
+            bool col = (rooks > 0) ? true : false;
+            GameObject obj = Instantiate(PieceDisplayPrefab);
+            obj.GetComponent<Image>().sprite = Resources.Load<Sprite>(col ? "DefaultPieceSet/Brook" : "DefaultPieceSet/Wrook");
+            obj.transform.SetParent(col ? WhitePieceCap.transform : BlackPieceCap.transform, false);
+            obj.transform.localScale = Vector3.one;
+        }
+        for(int i = 0; i < math.abs(bishops); ++i){
+            bool col = (bishops > 0) ? true : false;
+            GameObject obj = Instantiate(PieceDisplayPrefab);
+            obj.GetComponent<Image>().sprite = Resources.Load<Sprite>(col ? "DefaultPieceSet/Bbishop" : "DefaultPieceSet/Wbishop");
+            obj.transform.SetParent(col ? WhitePieceCap.transform : BlackPieceCap.transform, false);
+            obj.transform.localScale = Vector3.one;
+        }
+        for(int i = 0; i < math.abs(knights); ++i){
+            bool col = (knights > 0) ? true : false;
+            GameObject obj = Instantiate(PieceDisplayPrefab);
+            obj.GetComponent<Image>().sprite = Resources.Load<Sprite>(col ? "DefaultPieceSet/Bknight" : "DefaultPieceSet/Wknight");
+            obj.transform.SetParent(col ? WhitePieceCap.transform : BlackPieceCap.transform, false);
+            obj.transform.localScale = Vector3.one;
+        }
+        for(int i = 0; i < math.abs(pawns); ++i){
+            bool col = (pawns > 0) ? true : false;
+            GameObject obj = Instantiate(PieceDisplayPrefab);
+            obj.GetComponent<Image>().sprite = Resources.Load<Sprite>(col ? "DefaultPieceSet/Bpawn" : "DefaultPieceSet/Wpawn");
+            obj.transform.SetParent(col ? WhitePieceCap.transform : BlackPieceCap.transform, false);
+            obj.transform.localScale = Vector3.one;
+        }
+
+        WhiteAdv.text = adv.ToString("+0;-0");
+        BlackAdv.text = (-adv).ToString("+0;-0");
     }
     public void ShowNotification(string title, string message){
         NotificationObject.transform.Find("Title").GetComponent<TMP_Text>().text = title;
@@ -407,18 +468,24 @@ public class Setup : MonoBehaviour{
             BlackPlayer = "Human";
             WhitePlayerIndicator.text = "You";
             BlackPlayerIndicator.text = "You";
+            WhitePlayerIndicator2.text = "You";
+            BlackPlayerIndicator2.text = "You";
         }
         else if (col){
             WhitePlayer = "Human";
             BlackPlayer = opp;
             WhitePlayerIndicator.text = "You";
             BlackPlayerIndicator.text = opp;
+            WhitePlayerIndicator2.text = "You";
+            BlackPlayerIndicator2.text = opp;
         }
         else{
             WhitePlayer = opp;
             BlackPlayer = "Human";
             WhitePlayerIndicator.text = opp;
             BlackPlayerIndicator.text = "You";
+            WhitePlayerIndicator2.text = opp;
+            BlackPlayerIndicator2.text = "You";
         }
 
         if (opp!=""){
@@ -443,6 +510,8 @@ public class Setup : MonoBehaviour{
             timed = true;
             WhiteClock.StartClock();
         }
+
+        RefreshAdvantageIndicator();
 
         if(WhitePlayer!="Human") EngineMove();
     }
