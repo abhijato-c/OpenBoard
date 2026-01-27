@@ -146,7 +146,7 @@ public class Setup : MonoBehaviour{
             HistoryTo.RemoveAt(i);
         }
     }
-    public void AddHistory(Vector2Int from, Vector2Int to){
+    public void AddHistory(Vector2Int from, Vector2Int to, string san){
         GameObject pc = Pieces[to.y, to.x];
         Piece PcScript = pc.GetComponent<Piece>();
 
@@ -157,16 +157,10 @@ public class Setup : MonoBehaviour{
         HistoryWtime.Add(WhiteClock.time);
         HistoryBtime.Add(BlackClock.time);
 
-        string MoveText = "";
-        MoveText += files[from.x];
-        MoveText += from.y+1;
-        MoveText += files[to.x];
-        MoveText += to.y+1;
-
         GameObject btn = Instantiate(MoveButtonPrefab, MoveHistory.transform);
         int hmsnap = HMclock;
         btn.GetComponent<Button>().onClick.AddListener(() => PreviewMove(hmsnap));
-        btn.transform.Find("Text").gameObject.GetComponent<TMP_Text>().text = MoveText;
+        btn.transform.Find("Text").gameObject.GetComponent<TMP_Text>().text = san;
         MoveButtons.Add(btn);
         HMclock++;
     }
@@ -340,7 +334,7 @@ public class Setup : MonoBehaviour{
         int FromBB = from.y*8 + 7-from.x;
         int ToBB = to.y*8 + 7-to.x;
         Move MoveBB = (promote << 12) |(ToBB << 6) | FromBB;
-        Board.move_piece(MoveBB);
+        string san = Board.MovePieceSAN(MoveBB);
 
         // Handle checks
         if (Board.IsCheck()){
@@ -359,7 +353,7 @@ public class Setup : MonoBehaviour{
         }
 
         // Add to move history
-        AddHistory(from, to);
+        AddHistory(from, to, san);
 
         // Game over check
         if (Board.IsGameOver()){
@@ -459,6 +453,7 @@ public class Setup : MonoBehaviour{
         DestroySelectors();
         if (CheckIndicator != null) Destroy(CheckIndicator);
         DestroyHistory();
+        GameOver = false;
 
         Board.ParseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         SetBoard();

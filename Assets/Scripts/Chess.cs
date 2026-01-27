@@ -565,13 +565,91 @@ public class Chess {
         }
     }
 
-    public void move_piece(Move mv){
+    void move_piece(Move mv){
         if(turn) move_piece_white(mv);
         else move_piece_black(mv);
         turn = !turn;
         bpcs=bp|br|bn|bb|bq|bk;
         wpcs=wp|wr|wn|wb|wq|wk;
         pieces=bpcs|wpcs;
+    }
+    public string MovePieceSAN(Move mv){
+        // Also returns the move in san, a bodged fix for the move history in the GUI
+        string san = "";
+        char[] files = {'a','b','c','d','e','f','g','h'};
+
+        int to = (mv>>6) & 63;
+        int from = mv & 63;
+        Bitboard fromBB = 1UL << from;
+        Bitboard toBB = 1UL << to;
+
+        // Add piece identifier
+        if (((wk | bk) & fromBB) != 0) san += "K";
+        else if (((wq | bq) & fromBB) != 0) san += "Q";
+        else if (((wr | br) & fromBB) != 0) san += "R";
+        else if (((wb | bb) & fromBB) != 0) san += "B";
+        else if (((wn | bn) & fromBB) != 0) san += "N";
+
+        // Disambiguation file/rank
+        if (san == "") {
+            if (from%8 != to%8)  san += files[7 - (from % 8)]; // Pawn disambiguation for capture
+        }
+        else if (san != "K"){ // No disambiguation for kings
+            bool fileConflict = false;
+            bool rankConflict = false;
+            bool duplicateFound = false;
+
+            List<Move> candidates = LegalMoves();
+
+            foreach (Move m in candidates) {
+                int mFrom = m & 63;
+                int mTo = (m >> 6) & 63;
+
+                if (mTo == to && mFrom != from) {
+                    Bitboard mFromBB = 1UL << mFrom;
+
+                    // Conflicting piece of same type?
+                    if ((san == "Q" && ((wq | bq) & mFromBB) != 0) || (san == "R" && ((wr | br) & mFromBB) != 0) ||
+                    (san == "B" && ((wb | bb) & mFromBB) != 0) || (san == "N" && ((wn | bn) & mFromBB) != 0)) {
+                        duplicateFound = true;
+                        if ((mFrom % 8) == (from % 8)) fileConflict = true; 
+                        if ((mFrom / 8) == (from / 8)) rankConflict = true; 
+                    }
+                }
+            }
+
+            if (duplicateFound) {
+                if (!fileConflict) san += files[7 - (from % 8)].ToString();
+                else if (!rankConflict) san += ((from / 8) + 1).ToString();
+                else san += files[7 - (from % 8)].ToString() + ((from / 8) + 1).ToString();
+            }
+        }
+
+        // Capture identifier
+        if ((toBB & pieces) != 0) san += "x";
+
+        // To square
+        san += files[7 - (to%8)];
+        san += (to/8) + 1;
+
+        // Move the piece
+        if(turn) move_piece_white(mv);
+        else move_piece_black(mv);
+        turn = !turn;
+        bpcs=bp|br|bn|bb|bq|bk;
+        wpcs=wp|wr|wn|wb|wq|wk;
+        pieces=bpcs|wpcs;
+
+        // Castling handle
+        if (mv == 67 || mv == 3707) san = "O-O";
+        else if (mv == 323 || mv == 3963) san = "O-O-O";
+
+        // Check, checkmate, and draw
+        if (IsCheckmate()) san += "#";
+        else if (IsStalemate() || IsInsufficientMaterial()) san += "½–½";
+        else if (IsCheck()) san += "+";
+
+        return san;
     }
     public List<Move> PseudoLegalMoves(){
         List<Move> Moves = new List<Move>();
