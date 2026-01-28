@@ -13,6 +13,9 @@ public class GamePopup : MonoBehaviour{
     public TMP_Text IncText;
     public Slider TimeSlider;
     public Slider IncSlider;
+    public TMP_Text P2NameText;
+    public TMP_InputField Player1Name;
+    public TMP_InputField Player2Name;
 
     List<string> EngineNames = new List<string>();
     int[] Times = {1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60};
@@ -40,13 +43,24 @@ public class GamePopup : MonoBehaviour{
         IncSlider.maxValue = Increments.Length - 1;
         IncSlider.value = 0;
 
+        Player1Name.text = "Player 1";
+        Player2Name.text = "Player 2";
+
         // Init values
         ChangeOpp(0);
         ChangeCol(0);
     }
     public void ChangeOpp(int Opponent){ 
-        if (Opponent == 0) opp = ""; 
-        else opp = EngineNames[Opponent - 1];
+        if (Opponent == 0) {
+            opp = ""; 
+            P2NameText.text = "Player 2 Name";
+            Player2Name.text = "Player 2";
+        }
+        else {
+            opp = EngineNames[Opponent - 1];
+            P2NameText.text = "Engine Name";
+            Player2Name.text = opp;
+        }
         OppSel.value = Opponent; 
         OppSel.RefreshShownValue();
     }
@@ -77,8 +91,10 @@ public class GamePopup : MonoBehaviour{
         IncText.text = Inc.ToString() + " sec";
     }
     public void Submit(){
+        string WhitePlayer = col ? Player1Name.text : Player2Name.text;
+        string BlackPlayer = col ? Player2Name.text : Player1Name.text;
         gameObject.SetActive(false);
-        Setup.Instance.NewGame(opp, col, Time, Inc);
+        Setup.Instance.NewGame(opp, col, Time, Inc, WhitePlayer, BlackPlayer);
     }
     public void Close(){
         gameObject.SetActive(false);

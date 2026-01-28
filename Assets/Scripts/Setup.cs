@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TMPro;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,6 +31,7 @@ public class Setup : MonoBehaviour{
     public GameObject PieceDisplayPrefab;
     public ClockManager WhiteClock;
     public ClockManager BlackClock;
+    public ExportManager ExportWindow;
     public Color LightColor;
     public Color DarkColor;
     public Color RegualarClockColor;
@@ -42,12 +44,15 @@ public class Setup : MonoBehaviour{
     GameObject[,] Pieces = new GameObject[8, 8];
     List<GameObject> Selectors = new List<GameObject>();
     public Engine eng = new Engine();
-    string WhitePlayer = "Human";
-    string BlackPlayer = "Human";
+    string WhiteEngine;
+    string BlackEngine;
+    string WhiteName;
+    string BlackName;
     bool timed = false;
     int increment = 0;
     bool GameOver = false;
     GameObject CheckIndicator;
+    List<string> PGNmoves = new List<string>();
 
     // Move History
     List<string> HistoryFen = new List<string>();
@@ -144,6 +149,7 @@ public class Setup : MonoBehaviour{
             HistoryType.RemoveAt(i);
             HistoryFrom.RemoveAt(i);
             HistoryTo.RemoveAt(i);
+            PGNmoves.RemoveAt(i);
         }
     }
     public void AddHistory(Vector2Int from, Vector2Int to, string san){
@@ -156,6 +162,7 @@ public class Setup : MonoBehaviour{
         HistoryType.Add(PcScript.type);
         HistoryWtime.Add(WhiteClock.time);
         HistoryBtime.Add(BlackClock.time);
+        PGNmoves.Add(san);
 
         GameObject btn = Instantiate(MoveButtonPrefab, MoveHistory.transform);
         int hmsnap = HMclock;
@@ -266,7 +273,7 @@ public class Setup : MonoBehaviour{
     }
     public void PieceClicked(Vector2Int position, bool col){
         DestroySelectors();
-        if(col != Board.turn || (col && WhitePlayer!="Human") || (!col && BlackPlayer!="Human") || GameOver) return;
+        if(col != Board.turn || (col && WhiteEngine != "") || (!col && BlackEngine != "") || GameOver) return;
 
         // Spawn in the new selectors
         List<Vector2Int> ToPositions = GetPieceMoves(position);
@@ -361,12 +368,12 @@ public class Setup : MonoBehaviour{
             if (Board.IsCheckmate()){
                 msg += "Game result : Checkmate";
                 if (Board.turn)
-                    msg += "\n Winner : Black";
+                    msg += "\n Winner : " + BlackName;
                 else
-                    msg += "\n Winner : White";
+                    msg += "\n Winner : " + WhiteName;
                 
-                if (WhitePlayer != BlackPlayer){
-                    if ((WhitePlayer == "Human" && !Board.turn) || (BlackPlayer == "Human" && Board.turn))
+                if (WhiteEngine != "" || BlackEngine != ""){
+                    if ((WhiteEngine == "" && !Board.turn) || (BlackEngine == "Human" && Board.turn))
                         msg += "\n Yow Won!!";
                     else
                         msg += "\n Sorry, you lost :c";
@@ -388,7 +395,7 @@ public class Setup : MonoBehaviour{
         }
 
         // Engine move
-        if((Board.turn && WhitePlayer!="Human") || (!Board.turn && BlackPlayer!="Human")) EngineMove();
+        if((Board.turn && WhiteEngine != "") || (!Board.turn && BlackEngine != "")) EngineMove();
     }
     public void RefreshAdvantageIndicator(){
         int queens = math.countbits(Board.wq) - math.countbits(Board.bq);
@@ -448,7 +455,7 @@ public class Setup : MonoBehaviour{
     public void CloseNotification(){
         NotificationObject.SetActive(false);
     }
-    public void NewGame(string opp, bool col, int time, int inc){
+    public void NewGame(string opp, bool col, int time, int inc, string wp, string bp){
         HMclock = 0;
         DestroySelectors();
         if (CheckIndicator != null) Destroy(CheckIndicator);
@@ -459,29 +466,23 @@ public class Setup : MonoBehaviour{
         SetBoard();
         eng.Kill();
         if(opp == ""){
-            WhitePlayer = "Human";
-            BlackPlayer = "Human";
-            WhitePlayerIndicator.text = "You";
-            BlackPlayerIndicator.text = "You";
-            WhitePlayerIndicator2.text = "You";
-            BlackPlayerIndicator2.text = "You";
+            WhiteEngine = "";
+            BlackEngine = "";
         }
         else if (col){
-            WhitePlayer = "Human";
-            BlackPlayer = opp;
-            WhitePlayerIndicator.text = "You";
-            BlackPlayerIndicator.text = opp;
-            WhitePlayerIndicator2.text = "You";
-            BlackPlayerIndicator2.text = opp;
+            WhiteEngine = "";
+            BlackEngine = opp;
         }
         else{
-            WhitePlayer = opp;
-            BlackPlayer = "Human";
-            WhitePlayerIndicator.text = opp;
-            BlackPlayerIndicator.text = "You";
-            WhitePlayerIndicator2.text = opp;
-            BlackPlayerIndicator2.text = "You";
+            WhiteEngine = opp;
+            BlackEngine = "";
         }
+        WhiteName = wp;
+        BlackName = bp;
+        WhitePlayerIndicator.text = WhiteName;
+        BlackPlayerIndicator.text = BlackName;
+        WhitePlayerIndicator2.text = WhiteName;
+        BlackPlayerIndicator2.text = BlackName;
 
         if (opp!=""){
             try{
@@ -490,7 +491,7 @@ public class Setup : MonoBehaviour{
             catch (Exception e){
                 Debug.LogError(e.Message);
                 ShowNotification("ENGINE ERROR!", e.Message);
-                NewGame("", true, 0, 0); 
+                NewGame("", true, 0, 0, "Player 1", "Player 2"); 
             }
         }
 
@@ -508,7 +509,7 @@ public class Setup : MonoBehaviour{
 
         RefreshAdvantageIndicator();
 
-        if(WhitePlayer!="Human") EngineMove();
+        if(WhiteEngine != "") EngineMove();
     }
     public void TimeOut(){
         GameOver = true;
@@ -516,12 +517,12 @@ public class Setup : MonoBehaviour{
 
         string msg = "Game result : Time Out";
         if (Board.turn)
-            msg += "\n Winner : Black";
+            msg += "\n Winner : " + BlackName;
         else
-            msg += "\n Winner : White";
+            msg += "\n Winner : " + WhiteName;
         
-        if (WhitePlayer != BlackPlayer){
-            if ((WhitePlayer == "Human" && !Board.turn) || (BlackPlayer == "Human" && Board.turn))
+        if (WhiteEngine != "" || BlackEngine != ""){
+            if ((WhiteEngine == "" && !Board.turn) || (BlackEngine == "" && Board.turn))
                 msg += "\n Yow Won!!";
             else
                 msg += "\n Sorry, you lost :c";
@@ -553,9 +554,37 @@ public class Setup : MonoBehaviour{
         Vector2Int to = new Vector2Int(ToFile, ToRank);
         MovePiece(from, to, prom);
     }
+    public void OpenExportWin(){
+        string res = "*";
+        if (Board.IsGameOver()){
+            if (Board.IsCheckmate()){
+                if (Board.turn) res = "0-1";
+                else res = "1-0";
+            }
+            else res = "½-½";
+        }
+
+        string Pgn = "";
+        Pgn += "[Event \"Match\"]\n";
+        Pgn += "[Site \"OpenBoard\"]\n";
+        Pgn += "[Date \"" + DateTime.Now.ToString("yyyy.MM.dd") + "\"]\n";
+        Pgn += "[Round \"1\"]\n";
+        Pgn += "[White \"" + WhiteName + "\"]\n";
+        Pgn += "[Black \"" + BlackName + "\"]\n";
+        Pgn += "[Result \"" + res + "\"]\n";
+        Pgn += "\n";
+
+        for(int i=0; i<PGNmoves.Count; ++i){
+            if(i%2 == 0) Pgn += (i/2+1).ToString() + ".";
+            Pgn += PGNmoves[i] + " ";
+        }
+        if (res != "*") Pgn += res;
+
+        ExportWindow.Spawn(Board.GenerateFen(), Pgn);
+    }
     void Start(){
         GenerateBoard(LightColor, DarkColor);
-        NewGame("", true, 0, 0);
+        NewGame("", true, 0, 0, "Player 1", "Player 2");
     }
     void Awake() {
         if (Instance == null) Instance = this;

@@ -52,6 +52,7 @@
     <Compile Include="Assets/Scripts/ClockManager.cs" />
     <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowser.cs" />
     <Compile Include="Assets/Scripts/Selector.cs" />
+    <Compile Include="Assets/Scripts/ExportManager.cs" />
     <Compile Include="Assets/StandaloneFileBrowser/StandaloneFileBrowserEditor.cs" />
     <Compile Include="Assets/Scripts/Promote.cs" />
     <Compile Include="Assets/Scripts/Setup.cs" />

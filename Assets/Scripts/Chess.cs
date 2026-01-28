@@ -646,7 +646,7 @@ public class Chess {
 
         // Check, checkmate, and draw
         if (IsCheckmate()) san += "#";
-        else if (IsStalemate() || IsInsufficientMaterial()) san += "½–½";
+        else if (IsStalemate() || IsInsufficientMaterial()) san += "½-½";
         else if (IsCheck()) san += "+";
 
         return san;
